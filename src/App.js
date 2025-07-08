@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit2, Trash2, Copy, Check, Shield, Smartphone } from 'lucide-react';
 
 const API_URL = "https://totp-authenticator-production.up.railway.app";
+
 // TOTP generation function
 const generateTOTP = (secret, timeStep = 30, digits = 6) => {
   const base32chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -109,7 +110,7 @@ const App = () => {
     period: 30
   });
 
-  // Load accounts from localStorage
+  // Load accounts from database
   useEffect(() => {
     const loadAccounts = async () => {
       try {
@@ -124,12 +125,12 @@ const App = () => {
     loadAccounts();
   }, []);
 
-  // Save accounts to localStorage
+  // Save accounts to database
   useEffect(() => {
     const saveAccounts = async () => {
       if (accounts.length >= 0) { // Cho phép save cả mảng rỗng
         try {
-          await fetch('/api/accounts', {
+          await fetch(`${API_URL}/api/accounts`, { // SỬA: Thêm API_URL
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
