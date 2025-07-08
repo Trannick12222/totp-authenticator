@@ -3,7 +3,14 @@ const mysql = require('mysql2/promise');
 const cors = require('cors');
 
 const app = express();
-app.use(cors());
+
+// CORS configuration - CHO PHÉP TẤT CẢ DOMAIN
+app.use(cors({
+  origin: '*', // Hoặc chỉ định domain cụ thể: ['https://otp.nicktran.org']
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 
 // Debug: Log environment variables
