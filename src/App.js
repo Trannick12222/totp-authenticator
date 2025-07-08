@@ -102,7 +102,7 @@ const App = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
-  const [isLoaded, setIsLoaded] = useState(false); // THÊM: flag để biết đã load data chưa
+  const [isLoaded, setIsLoaded] = useState(false);
   const [newAccount, setNewAccount] = useState({
     label: '',
     secret: '',
@@ -115,41 +115,41 @@ const App = () => {
   useEffect(() => {
     const loadAccounts = async () => {
       try {
+        console.log('🔄 Loading accounts from:', `${API_URL}/api/accounts`);
         const response = await fetch(`${API_URL}/api/accounts`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         const data = await response.json();
+        console.log('📥 Loaded accounts:', data);
         setAccounts(data);
-        setIsLoaded(true); // THÊM: đánh dấu đã load xong
+        setIsLoaded(true);
       } catch (error) {
-        console.error('Error loading accounts:', error);
-        setIsLoaded(true); // Vẫn đánh dấu đã load để tránh lặp
+        console.error('❌ Error loading accounts:', error);
+        setIsLoaded(true);
       }
     };
     
     loadAccounts();
   }, []);
 
-  // Save accounts to database - CHỈ SAU KHI ĐÃ LOAD XONG
-  useEffect(() => {
-    const saveAccounts = async () => {
-      // CHỈ save khi đã load xong và có thay đổi thực sự
-      if (!isLoaded) return;
-      
-      try {
-        await fetch(`${API_URL}/api/accounts`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(accounts),
-        });
-        console.log('✅ Saved accounts:', accounts.length);
-      } catch (error) {
-        console.error('Error saving accounts:', error);
-      }
-    };
-    
-    saveAccounts();
-  }, [accounts, isLoaded]); // Thêm isLoaded vào dependency
+  // Function to save accounts to database
+  const saveAccountsToDB = async (accountsToSave) => {
+    try {
+      await fetch(`${API_URL}/api/accounts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(accountsToSave),
+      });
+      console.log('✅ Saved accounts:', accountsToSave.length);
+    } catch (error) {
+      console.error('Error saving accounts:', error);
+    }
+  };
 
   // Generate codes for all accounts
   const generateCodes = useCallback(async () => {
@@ -183,7 +183,7 @@ const App = () => {
     return () => clearInterval(timer);
   }, [generateCodes]);
 
-  const addAccount = () => {
+  const addAccount = async () => {
     if (!newAccount.label || !newAccount.secret) return;
     
     const account = {
@@ -192,7 +192,12 @@ const App = () => {
       secret: newAccount.secret.replace(/\s/g, '').toUpperCase()
     };
     
-    setAccounts(prev => [...prev, account]);
+    const newAccounts = [...accounts, account];
+    setAccounts(newAccounts);
+    
+    // Save ngay lập tức
+    await saveAccountsToDB(newAccounts);
+    
     setNewAccount({ label: '', secret: '', issuer: '', digits: 6, period: 30 });
     setShowAddForm(false);
   };
@@ -203,22 +208,31 @@ const App = () => {
     setShowAddForm(true);
   };
 
-  const updateAccount = () => {
+  const updateAccount = async () => {
     if (!newAccount.label || !newAccount.secret) return;
     
-    setAccounts(prev => prev.map(acc => 
+    const updatedAccounts = accounts.map(acc => 
       acc.id === editingAccount 
         ? { ...acc, ...newAccount, secret: newAccount.secret.replace(/\s/g, '').toUpperCase() }
         : acc
-    ));
+    );
+    
+    setAccounts(updatedAccounts);
+    
+    // Save ngay lập tức
+    await saveAccountsToDB(updatedAccounts);
     
     setEditingAccount(null);
     setNewAccount({ label: '', secret: '', issuer: '', digits: 6, period: 30 });
     setShowAddForm(false);
   };
 
-  const deleteAccount = (id) => {
-    setAccounts(prev => prev.filter(acc => acc.id !== id));
+  const deleteAccount = async (id) => {
+    const updatedAccounts = accounts.filter(acc => acc.id !== id);
+    setAccounts(updatedAccounts);
+    
+    // Save ngay lập tức
+    await saveAccountsToDB(updatedAccounts);
   };
 
   const copyCode = async (code, id) => {
