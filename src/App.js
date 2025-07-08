@@ -102,6 +102,7 @@ const App = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
+  const [isLoaded, setIsLoaded] = useState(false); // THÊM: flag để biết đã load data chưa
   const [newAccount, setNewAccount] = useState({
     label: '',
     secret: '',
@@ -117,34 +118,38 @@ const App = () => {
         const response = await fetch(`${API_URL}/api/accounts`);
         const data = await response.json();
         setAccounts(data);
+        setIsLoaded(true); // THÊM: đánh dấu đã load xong
       } catch (error) {
         console.error('Error loading accounts:', error);
+        setIsLoaded(true); // Vẫn đánh dấu đã load để tránh lặp
       }
     };
     
     loadAccounts();
   }, []);
 
-  // Save accounts to database
+  // Save accounts to database - CHỈ SAU KHI ĐÃ LOAD XONG
   useEffect(() => {
     const saveAccounts = async () => {
-      if (accounts.length >= 0) { // Cho phép save cả mảng rỗng
-        try {
-          await fetch(`${API_URL}/api/accounts`, { // SỬA: Thêm API_URL
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(accounts),
-          });
-        } catch (error) {
-          console.error('Error saving accounts:', error);
-        }
+      // CHỈ save khi đã load xong và có thay đổi thực sự
+      if (!isLoaded) return;
+      
+      try {
+        await fetch(`${API_URL}/api/accounts`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(accounts),
+        });
+        console.log('✅ Saved accounts:', accounts.length);
+      } catch (error) {
+        console.error('Error saving accounts:', error);
       }
     };
     
     saveAccounts();
-  }, [accounts]);
+  }, [accounts, isLoaded]); // Thêm isLoaded vào dependency
 
   // Generate codes for all accounts
   const generateCodes = useCallback(async () => {
@@ -236,6 +241,20 @@ const App = () => {
   };
 
   const progress = ((30 - timeLeft) / 30) * 100;
+
+  // Hiển thị loading khi chưa load xong
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
+            <Shield className="w-8 h-8 text-white animate-pulse" />
+          </div>
+          <p className="text-gray-600">Loading accounts...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
