@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit2, Trash2, Copy, Check, Shield, Smartphone } from 'lucide-react';
 
-
+const API_URL = "https://totp-authenticator-production.up.railway.app";
 // TOTP generation function
 const generateTOTP = (secret, timeStep = 30, digits = 6) => {
   const base32chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -113,7 +113,7 @@ const App = () => {
   useEffect(() => {
     const loadAccounts = async () => {
       try {
-        const response = await fetch('/api/accounts');
+        const response = await fetch(`${API_URL}/api/accounts`);
         const data = await response.json();
         setAccounts(data);
       } catch (error) {
