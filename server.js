@@ -83,7 +83,7 @@ app.post('/api/accounts', async (req, res) => {
     const accounts = req.body;
     console.log('POST /api/accounts, incoming:', accounts.length, 'accounts');
     
-    // Delete all existing accounts
+    // Delete all existing accounts or none
     await pool.query('DELETE FROM accounts');
     
     // Insert new accounts
