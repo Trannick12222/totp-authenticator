@@ -1,31 +1,39 @@
-// server.js
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
+const { Pool } = require('pg');
+const cors = require('cors');
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 
-const DATA_FILE = path.join(__dirname, 'accounts.json');
+// Dùng biến môi trường DATABASE_URL Railway cung cấp
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
 
-// Đọc accounts
-app.get('/api/accounts', (req, res) => {
+// Tạo table accounts (chạy lệnh này 1 lần trên database của bạn):
+// CREATE TABLE accounts (id VARCHAR(32) PRIMARY KEY, label VARCHAR(255), secret VARCHAR(255), issuer VARCHAR(255), digits INT, period INT);
+
+app.get('/api/accounts', async (req, res) => {
   try {
-    if (fs.existsSync(DATA_FILE)) {
-      const data = fs.readFileSync(DATA_FILE, 'utf8');
-      res.json(JSON.parse(data));
-    } else {
-      res.json([]);
-    }
+    const result = await pool.query('SELECT * FROM accounts');
+    res.json(result.rows);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to read accounts' });
+    res.status(500).json({ error: 'Failed to get accounts' });
   }
 });
 
-// Lưu accounts
-app.post('/api/accounts', (req, res) => {
+app.post('/api/accounts', async (req, res) => {
   try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(req.body, null, 2));
+    const accounts = req.body;
+    await pool.query('DELETE FROM accounts');
+    for (const acc of accounts) {
+      await pool.query(
+        'INSERT INTO accounts (id, label, secret, issuer, digits, period) VALUES ($1, $2, $3, $4, $5, $6)',
+        [acc.id, acc.label, acc.secret, acc.issuer, acc.digits, acc.period]
+      );
+    }
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Failed to save accounts' });
