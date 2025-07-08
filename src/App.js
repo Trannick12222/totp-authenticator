@@ -111,21 +111,38 @@ const App = () => {
 
   // Load accounts from localStorage
   useEffect(() => {
-    const savedAccounts = localStorage.getItem('totp-accounts');
-    if (savedAccounts) {
+    const loadAccounts = async () => {
       try {
-        setAccounts(JSON.parse(savedAccounts));
-      } catch (e) {
-        console.error('Error loading accounts:', e);
+        const response = await fetch('/api/accounts');
+        const data = await response.json();
+        setAccounts(data);
+      } catch (error) {
+        console.error('Error loading accounts:', error);
       }
-    }
+    };
+    
+    loadAccounts();
   }, []);
 
   // Save accounts to localStorage
   useEffect(() => {
-    if (accounts.length > 0) {
-      localStorage.setItem('totp-accounts', JSON.stringify(accounts));
-    }
+    const saveAccounts = async () => {
+      if (accounts.length >= 0) { // Cho phép save cả mảng rỗng
+        try {
+          await fetch('/api/accounts', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(accounts),
+          });
+        } catch (error) {
+          console.error('Error saving accounts:', error);
+        }
+      }
+    };
+    
+    saveAccounts();
   }, [accounts]);
 
   // Generate codes for all accounts
