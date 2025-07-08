@@ -1,6 +1,7 @@
 /* eslint-disable no-undef */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Edit2, Trash2, Copy, Check, Shield, Smartphone, QrCode, Key } from 'lucide-react';
+import { Plus, Edit2, Trash2, Copy, Check, Shield, Smartphone } from 'lucide-react';
+
 
 // TOTP generation function
 const generateTOTP = (secret, timeStep = 30, digits = 6) => {
