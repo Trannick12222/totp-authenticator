@@ -1,6 +1,7 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 
@@ -12,6 +13,9 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+// Serve static files from React build
+app.use(express.static(path.join(__dirname, 'build')));
 
 // Debug: Log environment variables
 console.log('MySQL Config:', {
@@ -106,6 +110,11 @@ app.get('/api/health', async (req, res) => {
   } catch (error) {
     res.status(500).json({ status: 'ERROR', database: 'Disconnected', error: error.message });
   }
+});
+
+// Serve React app for all other routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
 const PORT = process.env.PORT || 3001;
