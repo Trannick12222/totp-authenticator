@@ -21,8 +21,10 @@ const pool = mysql.createPool({
 app.get('/api/accounts', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM accounts');
+    console.log('GET /api/accounts:', rows);
     res.json(rows);
   } catch (error) {
+    console.error('GET /api/accounts error:', error);
     res.status(500).json({ error: 'Failed to get accounts', detail: error.message });
   }
 });
@@ -30,6 +32,7 @@ app.get('/api/accounts', async (req, res) => {
 app.post('/api/accounts', async (req, res) => {
   try {
     const accounts = req.body;
+    console.log('POST /api/accounts, incoming:', accounts);
     await pool.query('DELETE FROM accounts');
     for (const acc of accounts) {
       await pool.query(
@@ -39,9 +42,11 @@ app.post('/api/accounts', async (req, res) => {
     }
     res.json({ success: true });
   } catch (error) {
+    console.error('POST /api/accounts error:', error);
     res.status(500).json({ error: 'Failed to save accounts', detail: error.message });
   }
 });
 
 app.listen(3001, () => {
   console.log('Server running on port 3001');
+});
